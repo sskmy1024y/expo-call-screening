@@ -36,3 +36,38 @@ pnpm test
 ```sh
 pnpm pack:plugin
 ```
+
+## alpha版をnpmへ公開する
+
+[publish.yml](.github/workflows/publish.yml) が GitHub Release の公開時（pre-release を含む）にモジュールを公開します。npm Trusted Publishing（OIDC）を使うため、`NPM_TOKEN` シークレットは不要です。Release タグは `v<モジュールのバージョン>`、バージョンは `0.0.1-alpha.0` の形式に限定します。npm の dist-tag は常に `alpha` で、`latest` は更新しません。
+
+npm パッケージの **Settings** で GitHub Actions の Trusted Publisher を登録します。
+
+| 項目 | 値 |
+| --- | --- |
+| Organization or user | `sskmy1024y` |
+| Repository | `expo-call-screening` |
+| Workflow filename | `publish.yml` |
+| Environment name | 空欄 |
+| Allowed actions | `npm publish` による直接公開を有効にする |
+
+npmjs.com に空のパッケージを事前登録する方法はありません。OIDC には既存パッケージへの Trusted Publisher 設定が必要で、`npm stage publish` も新規パッケージの作成には使えません。初回はローカルで対話認証して公開し、パッケージを作成します。`NPM_TOKEN` シークレットは不要です。
+
+```sh
+pnpm install --frozen-lockfile
+pnpm test
+pnpm pack:plugin
+npm login --registry=https://registry.npmjs.org
+npm publish ./dist/expo-call-screening-0.0.1-alpha.0.tgz --tag alpha --access public --registry=https://registry.npmjs.org
+```
+
+ブラウザーでのログインと必要な2FA認証を完了し、その後で上記の Trusted Publisher を登録します。以降はトークンを保存せずCIから公開できます。初回に `0.0.1-alpha.0` を公開した場合、CI用は `0.0.1-alpha.1` に更新してください。同じバージョンは上書きできません。所有権の競合が表示された場合は、先にnpm上の所有権を解決する必要があります。
+
+ワークフローを GitHub に反映し、Trusted Publisher を設定した後の手順:
+
+1. `modules/expo-call-screening/package.json` を未公開のalphaバージョンに更新し、コミット・pushします（現在は `0.0.1-alpha.0`）。
+2. そのコミットを対象に、同じバージョンのタグ（例: `v0.0.1-alpha.0`）で GitHub Release を作成します。**Set as a pre-release** を選択して公開します。
+3. Actions の **Publish alpha to npm** を確認します。バージョン検証 → 依存関係のインストール → テスト・型チェック → tarball作成 → npm公開の順に実行されます。
+4. `npm view expo-call-screening dist-tags --json` で公開結果を確認します。利用者は `pnpm expo install expo-call-screening@alpha` で導入できます。
+
+タグ作成やReleaseの下書き保存だけでは公開されません。Node 24 と npm 11 を使います（OIDC の要件は npm 11.5.1以上・Node 22.14.0以上）。詳しくは [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) を参照してください。このワークフローではネイティブビルド・実機テストは実行しません。

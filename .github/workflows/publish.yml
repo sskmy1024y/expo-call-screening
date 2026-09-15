@@ -1,0 +1,55 @@
+name: Publish alpha to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Install OIDC-compatible npm
+        run: npm install --global npm@11
+
+      - name: Validate alpha release
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const { version } = require('./modules/expo-call-screening/package.json');
+          assert.match(version, /^\d+\.\d+\.\d+-alpha\.\d+$/, 'Only alpha versions can be published by this workflow');
+          assert.equal(process.env.RELEASE_TAG, `v${version}`, 'Release tag must match the module version');
+          NODE
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm pack:plugin
+
+      - name: Publish to npm
+        run: |
+          version=$(node -p "require('./modules/expo-call-screening/package.json').version")
+          npm publish "./dist/expo-call-screening-${version}.tgz" --tag alpha --access public

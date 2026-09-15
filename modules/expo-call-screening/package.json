@@ -4,6 +4,11 @@
   "description": "Caller ID for Expo apps: register phone number / display name pairs with the iOS Call Directory Extension and the Android call screening service.",
   "author": "SHO Yamashita",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sskmy1024y/expo-call-screening.git",
+    "directory": "modules/expo-call-screening"
+  },
   "keywords": [
     "expo",
     "expo-module",
