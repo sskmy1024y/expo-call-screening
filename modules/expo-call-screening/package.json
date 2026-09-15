@@ -1,0 +1,45 @@
+{
+  "name": "expo-call-screening",
+  "version": "0.1.0",
+  "description": "Caller ID for Expo apps: register phone number / display name pairs with the iOS Call Directory Extension and the Android call screening service.",
+  "author": "SHO Yamashita",
+  "license": "MIT",
+  "keywords": [
+    "expo",
+    "expo-module",
+    "config-plugin",
+    "react-native",
+    "callkit",
+    "call-directory",
+    "call-screening",
+    "caller-id"
+  ],
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "src",
+    "plugin/build",
+    "ios",
+    "android",
+    "targets",
+    "!targets/**/Info.plist",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "README.md",
+    "README.ja.md"
+  ],
+  "scripts": {
+    "build:plugin": "tsc -p plugin",
+    "prepack": "pnpm build:plugin"
+  },
+  "peerDependencies": {
+    "expo": ">=52"
+  },
+  "dependencies": {
+    "@bacons/apple-targets": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "typescript": "~6.0.3"
+  }
+}

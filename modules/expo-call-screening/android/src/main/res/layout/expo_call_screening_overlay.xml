@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default contents of the overlay shown by CallerIdOverlay on an incoming call.
+
+  An app can replace this band wholesale by shipping its own
+  `res/layout/expo_call_screening_overlay.xml`, which wins over this library resource. A replacement must
+  keep the `expo_call_screening_label` and `expo_call_screening_phone_number` text views, because
+  CallerIdOverlay fills those two ids in and gives up when either is missing.
+
+  Only framework widgets are used, so an app that depends on neither AppCompat nor Material still
+  inflates this layout.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+  android:background="@drawable/expo_call_screening_overlay_background"
+  android:padding="16dp">
+
+  <TextView
+    android:id="@+id/expo_call_screening_label"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textSize="18sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFFFF"
+    android:maxLines="2"
+    android:ellipsize="end" />
+
+  <TextView
+    android:id="@+id/expo_call_screening_phone_number"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:textSize="14sp"
+    android:textColor="#FFCBD2D9"
+    android:maxLines="1"
+    android:ellipsize="end" />
+
+</LinearLayout>

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ExpoCallScreeningModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.callscreening.ExpoCallScreeningModule"]
+  }
+}
