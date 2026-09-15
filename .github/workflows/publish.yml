@@ -1,4 +1,4 @@
-name: Publish alpha to npm
+name: Stage alpha on npm
 
 on:
   release:
@@ -30,8 +30,8 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
-      - name: Install OIDC-compatible npm
-        run: npm install --global npm@11
+      - name: Install npm with staged publishing support
+        run: npm install --global npm@11.19.1
 
       - name: Validate alpha release
         env:
@@ -49,7 +49,7 @@ jobs:
       - run: pnpm exec tsc --noEmit
       - run: pnpm pack:plugin
 
-      - name: Publish to npm
+      - name: Stage package for approval
         run: |
           version=$(node -p "require('./modules/expo-call-screening/package.json').version")
-          npm publish "./dist/expo-call-screening-${version}.tgz" --tag alpha --access public
+          npm stage publish "./dist/expo-call-screening-${version}.tgz" --tag alpha --access public

@@ -1,6 +1,6 @@
 {
   "name": "expo-call-screening",
-  "version": "0.0.1-alpha.0",
+  "version": "0.0.1-alpha.1",
   "description": "Caller ID for Expo apps: register phone number / display name pairs with the iOS Call Directory Extension and the Android call screening service.",
   "author": "SHO Yamashita",
   "license": "MIT",
