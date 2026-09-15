@@ -38,7 +38,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:plugin": "pnpm --dir modules/expo-call-screening build:plugin"
+    "build:plugin": "pnpm --dir modules/expo-call-screening build",
+    "pack:plugin": "pnpm --dir modules/expo-call-screening pack --pack-destination ../../dist",
+    "postinstall": "pnpm --dir modules/expo-call-screening build:module"
   },
   "private": true,
   "packageManager": "pnpm@10.34.2"

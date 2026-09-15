@@ -21,6 +21,7 @@
     "node_modules",
     "ios",
     "android",
-    "modules/expo-call-screening/plugin"
+    "modules/expo-call-screening/plugin",
+    "modules/expo-call-screening/build"
   ]
 }

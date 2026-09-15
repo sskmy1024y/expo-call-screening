@@ -19,8 +19,14 @@ pnpm expo run:android --device
 
 ## モジュールを開発するとき
 
-Config Plugin は TypeScript です。`modules/expo-call-screening/plugin/src` を編集したら、prebuild の前に再ビルドしてください。
+モジュールの JavaScript と Config Plugin は TypeScript で、使用前にコンパイルが必要です。`pnpm install` 時に `postinstall` で JavaScript がコンパイルされます。`modules/expo-call-screening/src` または `plugin/src` を編集したら、両方を再ビルドして prebuild をやり直してください。
 
 ```sh
 pnpm build:plugin
+```
+
+モジュール単体のリリース用 tarball を作る場合（`dist/` に出力）:
+
+```sh
+pnpm pack:plugin
 ```

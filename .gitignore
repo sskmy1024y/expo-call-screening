@@ -39,3 +39,6 @@ yarn-error.*
 # generated native projects (CNG)
 /ios
 /android
+
+# packed module tarballs
+/dist

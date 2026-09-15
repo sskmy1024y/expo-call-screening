@@ -25,9 +25,17 @@ is granted, with a button to request it.
 
 ## Working on the module
 
-The config plugin is TypeScript. After editing
-`modules/expo-call-screening/plugin/src`, rebuild it before running prebuild:
+The module's JavaScript and its config plugin are TypeScript and are compiled
+before use. `pnpm install` compiles the JavaScript through `postinstall`; after
+editing anything under `modules/expo-call-screening/src` or `plugin/src`, rebuild
+both and re-run prebuild:
 
 ```sh
 pnpm build:plugin
+```
+
+To produce the release tarball for the module alone (written to `dist/`):
+
+```sh
+pnpm pack:plugin
 ```
