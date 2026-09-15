@@ -3,6 +3,8 @@ import path from 'path';
 
 import type { ExpoCallScreeningPluginProps } from './types';
 
+const pkg = require('../../package.json') as { version: string };
+
 /** Entitlement holding the App Groups an app and its extensions share. */
 const APP_GROUPS_ENTITLEMENT = 'com.apple.security.application-groups';
 
@@ -106,4 +108,4 @@ const withIosCallDirectoryPlugin: ConfigPlugin<ExpoCallScreeningPluginProps['ios
  * registering the extension target twice.
  */
 export const withIosCallDirectory: ConfigPlugin<ExpoCallScreeningPluginProps['ios']> =
-  createRunOncePlugin(withIosCallDirectoryPlugin, 'expo-call-screening:ios-call-directory', '1.0.0');
+  createRunOncePlugin(withIosCallDirectoryPlugin, 'expo-call-screening:ios-call-directory', pkg.version);

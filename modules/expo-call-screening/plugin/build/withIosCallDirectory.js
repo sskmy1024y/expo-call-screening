@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.withIosCallDirectory = void 0;
 const config_plugins_1 = require("expo/config-plugins");
 const path_1 = __importDefault(require("path"));
+const pkg = require('../../package.json');
 /** Entitlement holding the App Groups an app and its extensions share. */
 const APP_GROUPS_ENTITLEMENT = 'com.apple.security.application-groups';
 /** Info.plist keys read by `ExpoCallScreeningModule.swift`. */
@@ -83,4 +84,4 @@ const withIosCallDirectoryPlugin = (config, props) => {
  * Running it twice is a no-op, which keeps a duplicated plugin entry from
  * registering the extension target twice.
  */
-exports.withIosCallDirectory = (0, config_plugins_1.createRunOncePlugin)(withIosCallDirectoryPlugin, 'expo-call-screening:ios-call-directory', '1.0.0');
+exports.withIosCallDirectory = (0, config_plugins_1.createRunOncePlugin)(withIosCallDirectoryPlugin, 'expo-call-screening:ios-call-directory', pkg.version);
