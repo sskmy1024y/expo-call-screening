@@ -34,6 +34,13 @@ both and re-run prebuild:
 pnpm build:plugin
 ```
 
+The root pnpm workspace installs the module's build dependencies as well. Run
+the config plugin regression tests with:
+
+```sh
+pnpm test
+```
+
 To produce the release tarball for the module alone (written to `dist/`):
 
 ```sh

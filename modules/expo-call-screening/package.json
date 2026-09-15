@@ -33,6 +33,7 @@
     "build": "pnpm build:module && pnpm build:plugin",
     "build:module": "tsc -p tsconfig.json",
     "build:plugin": "tsc -p plugin",
+    "test": "node --test plugin/tests/*.test.cjs",
     "clean": "rm -rf build plugin/build",
     "prepack": "pnpm build"
   },
@@ -40,7 +41,8 @@
     "expo": ">=52"
   },
   "dependencies": {
-    "@bacons/apple-targets": "^5.0.0"
+    "@bacons/apple-targets": "^5.0.0",
+    "@expo/plist": "^0.5.4"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",

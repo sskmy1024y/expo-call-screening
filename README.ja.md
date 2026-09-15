@@ -25,6 +25,12 @@ pnpm expo run:android --device
 pnpm build:plugin
 ```
 
+ルートの pnpm workspace がモジュールのビルド用依存関係もインストールします。Config Plugin の回帰テストは次のコマンドで実行できます。
+
+```sh
+pnpm test
+```
+
 モジュール単体のリリース用 tarball を作る場合（`dist/` に出力）:
 
 ```sh

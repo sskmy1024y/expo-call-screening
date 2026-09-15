@@ -74,7 +74,7 @@ plugins: [
 ],
 ```
 
-`appGroup` は既定値のまま使うことを推奨します。Extension は自身の Bundle ID から App Group を導出するため、独自の値にすると Extension が空のリストを読むことになります。不一致があると Plugin が警告を出します。
+`appGroup` はアプリと Extension の両方の Info.plist に書き込まれるため、独自の App Group と Extension Bundle ID も利用できます。Android 専用アプリでは `ios` を省略できます。使わない iOS 設定を残す場合は `platforms: ['android']` を指定してください。
 
 `android.overlayLayout` には、既定のオーバーレイを差し替えるレイアウト XML のパスをプロジェクトルートからの相対パスで指定します。`expo_call_screening_label` と `expo_call_screening_phone_number` の id を持つ TextView が必須で、Service はこの 2 つに表示名と電話番号を書き込みます。指定したファイルは Plugin が `expo_call_screening_overlay` というレイアウトリソースとして配置します。同名のリソースをアプリ側に置いてもモジュール既定のレイアウトを上書きできるため、このオプションは `android/` の外にファイルを置きたい場合の手段です。
 
@@ -97,11 +97,10 @@ await setCallerIdentities([
   { phoneNumber: '+819012345678', label: '田中 太郎 / Example Inc.' },
 ]);
 
-// iOS は reload しないと反映されない。Android では何もしない
-await reload();
-
-// OS 側で有効になっているか確認する
-if ((await getStatus()) !== 'enabled') {
+// 有効な場合だけ reload する。iOS の初回インストール時は無効
+if ((await getStatus()) === 'enabled') {
+  await reload();
+} else {
   await requestPermission();
 }
 
@@ -110,6 +109,23 @@ if (Platform.OS === 'android' && !(await hasOverlayPermission())) {
   await requestOverlayPermission();
 }
 ```
+
+iOS の `requestPermission()` は設定画面を開いた時点で resolve し、ユーザーの有効化を待ちません。アプリがフォアグラウンドに戻ったら、状態を再確認して reload します。例えば、マウント中の React コンポーネントに次のリスナーを設定します。
+
+```ts
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      void (async () => {
+        if ((await getStatus()) === 'enabled') await reload();
+      })().catch(console.error);
+    }
+  });
+  return () => subscription.remove();
+}, []);
+```
+
+`useEffect` は `react`、`AppState` は `react-native` から import してください。エラー表示はアプリに合わせて実装します。リストが未保存または空の場合、番号は登録されません。
 
 電話番号は E.164 形式（`+819012345678`）で登録してください。照合時は数字以外を除去し、iOS は国番号を含む完全な番号で比較するため、`090-1234-5678` のような国内形式は一致しません。
 
@@ -170,9 +186,10 @@ Android: 「他のアプリの上に重ねて表示」の設定画面を開き�
 
 iOS:
 
-1. 対応表を保存し `reload()` を呼ぶ
+1. 対応表を保存する
 2. 「設定 > 電話 > 着信拒否設定と着信 ID」でアプリをオンにする
-3. 登録した番号から端末に電話をかける。着信画面の番号がラベルに置き換わります
+3. アプリに戻り、`getStatus()` が `enabled` であることを確認して `reload()` を呼ぶ
+4. 登録した番号から端末に電話をかける。着信画面の番号がラベルに置き換わります
 
 Android:
 
@@ -193,7 +210,6 @@ Android:
 - [ ] iOS の Live Caller ID Lookup（サーバー照合方式、iOS 18 以上）
 - [ ] 数字除去以外の電話番号正規化（libphonenumber など）
 - [ ] 対応表のバックグラウンド同期
-- [ ] Config Plugin の自動テスト
 
 ## ライセンス
 

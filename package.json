@@ -39,6 +39,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:plugin": "pnpm --dir modules/expo-call-screening build",
+    "test": "pnpm build:plugin && pnpm --dir modules/expo-call-screening test",
     "pack:plugin": "pnpm --dir modules/expo-call-screening pack --pack-destination ../../dist",
     "postinstall": "pnpm --dir modules/expo-call-screening build:module"
   },

@@ -82,9 +82,10 @@ plugins: [
 ],
 ```
 
-Keep `appGroup` at its default unless you also change how the extension derives
-it. The extension reads the App Group from its own bundle identifier, so a custom
-value makes it read an empty list. The plugin warns when the two diverge.
+The plugin writes `appGroup` into both the host app and extension Info.plist,
+so custom App Groups and extension bundle identifiers are supported.
+Android-only apps can omit `ios`; set `platforms: ['android']` when keeping
+unused iOS settings in the config.
 
 `android.overlayLayout` is a path, relative to the project root, of a layout XML
 that replaces the default overlay. It must contain TextViews with the ids
@@ -113,11 +114,10 @@ await setCallerIdentities([
   { phoneNumber: '+819012345678', label: 'Taro Tanaka / Example Inc.' },
 ]);
 
-// iOS only applies the new list after a reload. No-op on Android.
-await reload();
-
-// Make sure the OS is actually using the list.
-if ((await getStatus()) !== 'enabled') {
+// Reload only when enabled; a fresh iOS installation starts disabled.
+if ((await getStatus()) === 'enabled') {
+  await reload();
+} else {
   await requestPermission();
 }
 
@@ -126,6 +126,26 @@ if (Platform.OS === 'android' && !(await hasOverlayPermission())) {
   await requestOverlayPermission();
 }
 ```
+
+On iOS, `requestPermission()` resolves when Settings opens, before the user
+has enabled the extension. Re-check and reload when the app returns to the
+foreground. For example, install this listener in a mounted React component:
+
+```ts
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      void (async () => {
+        if ((await getStatus()) === 'enabled') await reload();
+      })().catch(console.error);
+    }
+  });
+  return () => subscription.remove();
+}, []);
+```
+
+Import `useEffect` from `react` and `AppState` from `react-native`. Handle errors
+in your app's UI as appropriate. An unwritten or cleared list registers no numbers.
 
 Phone numbers should be in E.164 form (`+819012345678`). Matching strips every
 non-digit character, and iOS compares the full number including the country
@@ -200,9 +220,10 @@ when the app returns to the foreground. iOS: no-op.
 
 iOS:
 
-1. Save an identity and call `reload()`.
+1. Save an identity.
 2. Enable the app under Settings > Phone > Call Blocking & Identification.
-3. Call the device from the registered number. The label replaces the number on
+3. Return to the app, check that `getStatus()` is `enabled`, and call `reload()`.
+4. Call the device from the registered number. The label replaces the number on
    the incoming call screen.
 
 Android:
@@ -228,7 +249,6 @@ Not implemented yet. Contributions welcome.
 - [ ] iOS Live Caller ID Lookup (server-side lookup, iOS 18+)
 - [ ] Phone number normalisation beyond digit stripping (for example libphonenumber)
 - [ ] Background sync of the identity list
-- [ ] Automated tests for the config plugin
 
 ## License
 

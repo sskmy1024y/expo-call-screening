@@ -111,7 +111,7 @@ export default function CallerIdScreen() {
   const save = run('Save caller', async () => {
     await setCallerIdentities([{ phoneNumber: phoneNumber.trim(), label: label.trim() }]);
     // iOS only picks up the new entries once the extension is reloaded.
-    if (isIos) {
+    if (isIos && (await getStatus()) === 'enabled') {
       await reload();
     }
   });

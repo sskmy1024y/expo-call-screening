@@ -1,52 +1,37 @@
-import { createRunOncePlugin, type ConfigPlugin } from 'expo/config-plugins';
+import { createRunOncePlugin, withDangerousMod, type ConfigPlugin } from 'expo/config-plugins';
+import plist, { type PlistObject } from '@expo/plist';
+import fs from 'fs';
 import path from 'path';
 
 import type { ExpoCallScreeningPluginProps } from './types';
 
 const pkg = require('../../package.json') as { version: string };
 
-/** Entitlement holding the App Groups an app and its extensions share. */
 const APP_GROUPS_ENTITLEMENT = 'com.apple.security.application-groups';
 
-/** Info.plist keys read by `ExpoCallScreeningModule.swift`. */
 const APP_GROUP_KEY = 'ExpoCallScreeningAppGroup';
 const EXTENSION_BUNDLE_IDENTIFIER_KEY = 'ExpoCallScreeningExtensionBundleIdentifier';
 
-/**
- * Directory holding `call-directory/expo-target.config.js`.
- *
- * Resolved from this file rather than from the project root so the module keeps
- * working wherever it is installed. The compiled plugin lives in `plugin/build/`
- * and its sources in `plugin/src/`, and both are two levels below the module
- * root, so the same relative path is correct either way.
- */
+// Resolve from the package, not the consuming app; src/ and build/ have the same depth.
 const TARGETS_DIR = path.resolve(__dirname, '../../targets');
 
 type AppleTargetsProps = {
-  /** Directory scanned for target configs, relative to the project root. */
   root?: string;
   appleTeamId?: string;
 };
 
-// `@bacons/apple-targets/app.plugin` assigns the plugin to `module.exports`
-// directly, so the required value is the plugin itself, not a namespace.
+// apple-targets exports the plugin directly via module.exports.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const withTargetsDir = require('@bacons/apple-targets/app.plugin') as ConfigPlugin<AppleTargetsProps>;
 
-/**
- * Wires up the iOS half of `expo-call-screening`:
- *
- * 1. shares an App Group between the app and the Call Directory Extension,
- * 2. records the App Group and the extension bundle identifier in the app's
- *    `Info.plist` so the native module can find them at runtime,
- * 3. hands the extension target itself to `@bacons/apple-targets`.
- *
- * The order matters. `@bacons/apple-targets` evaluates
- * `targets/call-directory/expo-target.config.js` synchronously while resolving
- * plugins, and that file reads both the entitlement and the `Info.plist` key
- * written in the steps above.
- */
+// apple-targets evaluates its target config synchronously, after the host settings below are set.
 const withIosCallDirectoryPlugin: ConfigPlugin<ExpoCallScreeningPluginProps['ios']> = (config, props) => {
+  if (config.platforms && !config.platforms.includes('ios')) {
+    return config;
+  }
+  if (!config.ios && !props) {
+    return config;
+  }
   const bundleIdentifier = config.ios?.bundleIdentifier;
 
   if (!bundleIdentifier) {
@@ -62,20 +47,8 @@ const withIosCallDirectoryPlugin: ConfigPlugin<ExpoCallScreeningPluginProps['ios
   const extensionBundleIdentifier =
     props?.extensionBundleIdentifier ?? `${bundleIdentifier}.CallDirectory`;
 
-  if (appGroup !== defaultAppGroup) {
-    // The extension has no way to read the host app's Info.plist, so it rebuilds
-    // the App Group name from its own bundle identifier. See the comment on
-    // `sharedAppGroupIdentifier()` in `CallDirectoryHandler.swift`.
-    console.warn(
-      `[expo-call-screening] The custom App Group "${appGroup}" does not match the convention ` +
-        `"${defaultAppGroup}" that the Call Directory Extension derives at runtime. The extension ` +
-        'will read an empty store until `CallDirectoryHandler.swift` is taught about it.'
-    );
-  }
-
   config.ios = config.ios ?? {};
 
-  // `entitlements` is loosely typed, so a hand-written string is guarded against here.
   const configuredAppGroups = config.ios.entitlements?.[APP_GROUPS_ENTITLEMENT];
   const existingAppGroups: string[] = Array.isArray(configuredAppGroups) ? configuredAppGroups : [];
   config.ios.entitlements = {
@@ -94,18 +67,21 @@ const withIosCallDirectoryPlugin: ConfigPlugin<ExpoCallScreeningPluginProps['ios
   const projectRoot =
     (config._internal as { projectRoot?: string } | undefined)?.projectRoot ?? process.cwd();
 
+  // Mods run in reverse registration order. Register before apple-targets so
+  // its generated Info.plist exists before we update it, including on --clean.
+  config = withDangerousMod(config, ['ios', async (config) => {
+    const plistPath = path.join(TARGETS_DIR, 'call-directory/Info.plist');
+    const info = plist.parse(await fs.promises.readFile(plistPath, 'utf8')) as PlistObject;
+    await fs.promises.writeFile(plistPath, plist.build({ ...info, [APP_GROUP_KEY]: appGroup }));
+    return config;
+  }]);
+
   return withTargetsDir(config, {
-    // `@bacons/apple-targets` interpolates this into a glob run from the project
-    // root, so it has to be a relative path with forward slashes.
+    // apple-targets requires a project-relative glob path with forward slashes.
     root: path.relative(projectRoot, TARGETS_DIR).split(path.sep).join('/'),
-    appleTeamId: config.ios.appleTeamId,
+    appleTeamId: config.ios?.appleTeamId,
   });
 };
 
-/**
- * Adds the CallKit Call Directory Extension and the App Group it shares with the app.
- * Running it twice is a no-op, which keeps a duplicated plugin entry from
- * registering the extension target twice.
- */
 export const withIosCallDirectory: ConfigPlugin<ExpoCallScreeningPluginProps['ios']> =
   createRunOncePlugin(withIosCallDirectoryPlugin, 'expo-call-screening:ios-call-directory', pkg.version);
