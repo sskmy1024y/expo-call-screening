@@ -1,4 +1,4 @@
-name: Stage alpha on npm
+name: Stage release on npm
 
 on:
   release:
@@ -33,15 +33,31 @@ jobs:
       - name: Install npm with staged publishing support
         run: npm install --global npm@11.19.1
 
-      - name: Validate alpha release
+      - name: Resolve the version and the npm tag it publishes under
+        id: release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          node <<'NODE'
+          node <<'NODE' >> "$GITHUB_OUTPUT"
           const assert = require('node:assert/strict');
           const { version } = require('./modules/expo-call-screening/package.json');
-          assert.match(version, /^\d+\.\d+\.\d+-alpha\.\d+$/, 'Only alpha versions can be published by this workflow');
+
+          // Official semver pattern; capture group 4 is the pre-release part, if any.
+          const SEMVER =
+            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+          const match = SEMVER.exec(version);
+          assert(match, `\`${version}\` is not a valid semver version`);
           assert.equal(process.env.RELEASE_TAG, `v${version}`, 'Release tag must match the module version');
+
+          // The tag follows the version: `0.2.0` goes to `latest`, `0.2.0-beta.1` to `beta`.
+          // A pre-release must never take `latest`, or plain `npm install` hands it to everyone.
+          const prerelease = match[4];
+          const identifier = prerelease ? prerelease.split('.')[0] : null;
+          // npm refuses a dist-tag that parses as a version, which a bare numeric identifier does.
+          const tag = !identifier ? 'latest' : /^\d+$/.test(identifier) ? 'next' : identifier;
+
+          console.log(`version=${version}`);
+          console.log(`tag=${tag}`);
           NODE
 
       - run: pnpm install --frozen-lockfile
@@ -50,6 +66,15 @@ jobs:
       - run: pnpm pack:plugin
 
       - name: Stage package for approval
+        env:
+          NPM_TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          version=$(node -p "require('./modules/expo-call-screening/package.json').version")
-          npm stage publish "./dist/expo-call-screening-${version}.tgz" --tag alpha --access public
+          shopt -s nullglob
+          tarballs=(dist/*.tgz)
+          if [ ${#tarballs[@]} -ne 1 ]; then
+            echo "Expected exactly one tarball in dist/, found ${#tarballs[@]}: ${tarballs[*]}" >&2
+            exit 1
+          fi
+          echo "Staging ${tarballs[0]} as ${VERSION} under the \"${NPM_TAG}\" tag"
+          npm stage publish "${tarballs[0]}" --tag "$NPM_TAG" --access public
