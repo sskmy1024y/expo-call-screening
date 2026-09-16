@@ -5,6 +5,21 @@
 Caller ID for Expo apps. Register phone number / display name pairs from
 JavaScript and let the OS show the name on incoming calls.
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-ios1.jpg" alt="Incoming call on iOS showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-ios2.jpg" alt="iOS keypad showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-android1.jpg" alt="Android band sitting below the incoming-call notification" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-android2.jpg" alt="Android band on the full-screen incoming call" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center">iOS — incoming call</td>
+    <td align="center">iOS — keypad</td>
+    <td align="center">Android — alongside the notification</td>
+    <td align="center">Android — incoming call</td>
+  </tr>
+</table>
+
 | Platform | Mechanism | Shown in |
 | --- | --- | --- |
 | iOS | CallKit Call Directory Extension | The native incoming call screen |
@@ -95,6 +110,30 @@ the layout resource `expo_call_screening_overlay`; an app resource of that name
 overrides the module default just as well, so the option is only a convenience
 for projects that would rather keep the file outside `android/`.
 
+### Placing the band
+
+The band starts `expo_call_screening_overlay_top_offset` from the top of the screen, 280dp by
+default, and is inset from each side by `expo_call_screening_overlay_side_margin`, 12dp by
+default. The top offset clears the incoming-call heads-up notification on a Pixel 7, which
+occupies roughly the first 185dp and is drawn above the band; dialers differ, so an app whose
+band lands underneath its own notification redeclares the dimensions in
+`android/app/src/main/res/values/dimens.xml`:
+
+```xml
+<resources>
+  <dimen name="expo_call_screening_overlay_top_offset">260dp</dimen>
+  <dimen name="expo_call_screening_overlay_side_margin">16dp</dimen>
+</resources>
+```
+
+The user drags the band up and down, and where they leave it is remembered for later calls,
+taking precedence over `expo_call_screening_overlay_top_offset` — so raising the dimension does
+nothing once the band has been dragged. Drag it back, or clear the `expo_call_screening_overlay`
+preferences, to return to the default. The band is dismissed with the
+close button, by the call ending, or by the timeouts. `expo_call_screening_close` is optional in a
+replacement layout — leave it out and only the latter two apply. Its spoken label comes from the
+`expo_call_screening_close_description` string, which an app redeclares to localise.
+
 ## Usage
 
 ```ts
@@ -147,9 +186,27 @@ useEffect(() => {
 Import `useEffect` from `react` and `AppState` from `react-native`. Handle errors
 in your app's UI as appropriate. An unwritten or cleared list registers no numbers.
 
-Phone numbers should be in E.164 form (`+819012345678`). Matching strips every
-non-digit character, and iOS compares the full number including the country
-code, so domestic forms such as `090-1234-5678` never match.
+## Phone number format
+
+Store numbers in **E.164**: a `+`, the country code, then the national number —
+`+819012345678`. Spaces, dashes, dots and brackets are fine, since both platforms ignore them;
+the `+` and the country code are not optional. `setCallerIdentities` throws on anything else,
+naming the offending indexes, and stores nothing.
+
+That strictness comes from iOS, not from taste. The Call Directory extension hands CallKit an
+`Int64`, so a domestic `09012345678` is registered as `9012345678` — a different number,
+accepted without complaint, that never matches.
+
+Incoming calls are the other half, and they are not under anyone's control: carriers deliver
+`09012345678` or `+819012345678` as they please. Android reconciles the two with
+`PhoneNumberUtils.areSamePhoneNumber` against the SIM's country on Android 12 (API 31) and
+newer, and with its trailing-digit `compare` below that, where short numbers such as internal
+extensions can collide. iOS leaves the same job to CallKit. So one E.164 entry matches a call
+arriving in either form.
+
+Turning free-form input into E.164 is the app's job: it knows which region its users type
+numbers for, and this module does not. Doing it in the input form also lets you reject a bad
+number there, rather than at call time.
 
 ## API
 
@@ -170,6 +227,8 @@ checks. The tags below each function show where it does real work.
 `iOS` `Android`
 
 Replaces the stored list. `CallerIdentity` is `{ phoneNumber: string; label: string }`.
+Throws when a `phoneNumber` is not [E.164](#phone-number-format), leaving the stored list as it
+was.
 
 ### `reload(): Promise<void>`
 
@@ -247,7 +306,6 @@ Not implemented yet. Contributions welcome.
 - [ ] Show the overlay reliably on the lock screen across OEM dialers
 - [ ] Outgoing caller ID
 - [ ] iOS Live Caller ID Lookup (server-side lookup, iOS 18+)
-- [ ] Phone number normalisation beyond digit stripping (for example libphonenumber)
 - [ ] Background sync of the identity list
 
 ## License

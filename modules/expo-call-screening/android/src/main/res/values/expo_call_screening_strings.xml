@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  An app overrides these by declaring the same names in its own `res/values`, which is also how
+  it localises them.
+-->
+<resources>
+
+  <!-- Spoken for the close button on the band; the button itself shows a multiplication sign. -->
+  <string name="expo_call_screening_close_description">Close</string>
+
+</resources>

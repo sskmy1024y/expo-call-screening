@@ -1,6 +1,6 @@
 {
   "name": "expo-call-screening",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1",
   "description": "Caller ID for Expo apps: register phone number / display name pairs with the iOS Call Directory Extension and the Android call screening service.",
   "author": "SHO Yamashita",
   "license": "MIT",
@@ -38,7 +38,7 @@
     "build": "pnpm build:module && pnpm build:plugin",
     "build:module": "tsc -p tsconfig.json",
     "build:plugin": "tsc -p plugin",
-    "test": "node --test plugin/tests/*.test.cjs",
+    "test": "node --test plugin/tests/*.test.cjs tests/*.test.cjs",
     "clean": "rm -rf build plugin/build",
     "prepack": "pnpm build"
   },

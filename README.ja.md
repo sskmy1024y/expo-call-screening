@@ -4,6 +4,21 @@
 
 [`expo-call-screening`](./modules/expo-call-screening/README.ja.md) のサンプルアプリです。iOS の Call Directory Extension と Android の `CallScreeningService` を使い、着信時に発信者名を表示するローカル Expo Module を動かします。
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="docs/screenshot-ios1.jpg" alt="Incoming call on iOS showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-ios2.jpg" alt="iOS keypad showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-android1.jpg" alt="Android band sitting below the incoming-call notification" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-android2.jpg" alt="Android band on the full-screen incoming call" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center">iOS — 着信画面</td>
+    <td align="center">iOS — キーパッド</td>
+    <td align="center">Android — 通知と併用時</td>
+    <td align="center">Android — 着信画面</td>
+  </tr>
+</table>
+
 ## 実行
 
 ```sh
@@ -36,3 +51,7 @@ pnpm test
 ```sh
 pnpm pack:plugin
 ```
+
+## TODO
+
+- [ ] 電話番号の入力欄を保存前に E.164 へ正規化する（端末ロケールから取った地域を使う）。入力ミスを `setCallerIdentities` の throw ではなくフォームの時点で返せるようにする。ユーザーがどの地域の番号を入力するかを知っているのはアプリ側なので、モジュールは意図的にこれを行わない。
