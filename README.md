@@ -6,6 +6,21 @@ Example app for [`expo-call-screening`](./modules/expo-call-screening/README.md)
 local Expo Module that shows caller identities on incoming calls through the
 iOS Call Directory Extension and the Android `CallScreeningService`.
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="docs/screenshot-ios1.jpg" alt="Incoming call on iOS showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-ios2.jpg" alt="iOS keypad showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-android1.jpg" alt="Android band sitting below the incoming-call notification" width="200"></td>
+    <td align="center" width="25%"><img src="docs/screenshot-android2.jpg" alt="Android band on the full-screen incoming call" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center">iOS — incoming call</td>
+    <td align="center">iOS — keypad</td>
+    <td align="center">Android — alongside the notification</td>
+    <td align="center">Android — incoming call</td>
+  </tr>
+</table>
+
 ## Run
 
 ```sh
@@ -46,3 +61,10 @@ To produce the release tarball for the module alone (written to `dist/`):
 ```sh
 pnpm pack:plugin
 ```
+
+## TODO
+
+- [ ] Normalise the phone number field to E.164 before saving it, using a region taken from the
+  device locale, so a mistyped number is caught in the form rather than thrown by
+  `setCallerIdentities`. The module deliberately leaves this to the app, which is the side that
+  knows the region its users type numbers for.

@@ -7,34 +7,63 @@
   keep the `expo_call_screening_label` and `expo_call_screening_phone_number` text views, because
   CallerIdOverlay fills those two ids in and gives up when either is missing.
 
+  `expo_call_screening_close` is optional: CallerIdOverlay wires it up to dismiss the band when it is
+  present, and leaves the band tappable-free otherwise. The band itself is dragged up and down
+  regardless, so a replacement should leave some area that is not a clickable child.
+
   Only framework widgets are used, so an app that depends on neither AppCompat nor Material still
   inflates this layout.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="match_parent"
   android:layout_height="wrap_content"
-  android:orientation="vertical"
+  android:orientation="horizontal"
+  android:gravity="center_vertical"
   android:background="@drawable/expo_call_screening_overlay_background"
-  android:padding="16dp">
+  android:paddingStart="16dp"
+  android:paddingEnd="8dp"
+  android:paddingTop="12dp"
+  android:paddingBottom="12dp">
+
+  <LinearLayout
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical">
+
+    <TextView
+      android:id="@+id/expo_call_screening_label"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textSize="18sp"
+      android:textStyle="bold"
+      android:textColor="#FFFFFFFF"
+      android:maxLines="2"
+      android:ellipsize="end" />
+
+    <TextView
+      android:id="@+id/expo_call_screening_phone_number"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp"
+      android:textSize="14sp"
+      android:textColor="#FFCBD2D9"
+      android:maxLines="1"
+      android:ellipsize="end" />
+
+  </LinearLayout>
 
   <TextView
-    android:id="@+id/expo_call_screening_label"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:id="@+id/expo_call_screening_close"
+    android:layout_width="40dp"
+    android:layout_height="40dp"
+    android:gravity="center"
+    android:text="✕"
     android:textSize="18sp"
-    android:textStyle="bold"
-    android:textColor="#FFFFFFFF"
-    android:maxLines="2"
-    android:ellipsize="end" />
-
-  <TextView
-    android:id="@+id/expo_call_screening_phone_number"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:textSize="14sp"
     android:textColor="#FFCBD2D9"
-    android:maxLines="1"
-    android:ellipsize="end" />
+    android:contentDescription="@string/expo_call_screening_close_description"
+    android:background="?android:attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:focusable="true" />
 
 </LinearLayout>

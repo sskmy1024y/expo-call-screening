@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Geometry of the band shown by CallerIdOverlay on an incoming call.
+
+  An app overrides these by declaring the same names in its own `res/values`, the way it can
+  replace `expo_call_screening_overlay.xml` wholesale. App resources win over library resources.
+-->
+<resources>
+
+  <!--
+    Distance from the top of the screen to the top of the band, used until the user drags the
+    band somewhere else.
+
+    The incoming-call heads-up notification occupies roughly the first 185dp on a Pixel 7, so a
+    smaller offset puts the band underneath it. Dialers differ, which is why this is overridable.
+  -->
+  <dimen name="expo_call_screening_overlay_top_offset">280dp</dimen>
+
+  <!-- Gap between the band and each side of the screen, so the rounded card reads as a card. -->
+  <dimen name="expo_call_screening_overlay_side_margin">12dp</dimen>
+
+</resources>

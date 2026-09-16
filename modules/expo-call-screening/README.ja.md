@@ -4,6 +4,21 @@
 
 Expo アプリ向けの Caller ID。JavaScript から「電話番号 → 表示名」を登録すると、着信時に OS がその名前を表示します。
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-ios1.jpg" alt="Incoming call on iOS showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-ios2.jpg" alt="iOS keypad showing the registered name" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-android1.jpg" alt="Android band sitting below the incoming-call notification" width="200"></td>
+    <td align="center" width="25%"><img src="https://raw.githubusercontent.com/sskmy1024y/expo-call-screening/main/docs/screenshot-android2.jpg" alt="Android band on the full-screen incoming call" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center">iOS — 着信画面</td>
+    <td align="center">iOS — キーパッド</td>
+    <td align="center">Android — 通知と併用時</td>
+    <td align="center">Android — 着信画面</td>
+  </tr>
+</table>
+
 | プラットフォーム | 仕組み | 表示先 |
 | --- | --- | --- |
 | iOS | CallKit Call Directory Extension | iOS 標準の着信画面 |
@@ -78,6 +93,19 @@ plugins: [
 
 `android.overlayLayout` には、既定のオーバーレイを差し替えるレイアウト XML のパスをプロジェクトルートからの相対パスで指定します。`expo_call_screening_label` と `expo_call_screening_phone_number` の id を持つ TextView が必須で、Service はこの 2 つに表示名と電話番号を書き込みます。指定したファイルは Plugin が `expo_call_screening_overlay` というレイアウトリソースとして配置します。同名のリソースをアプリ側に置いてもモジュール既定のレイアウトを上書きできるため、このオプションは `android/` の外にファイルを置きたい場合の手段です。
 
+### 表示位置を変える
+
+バンドは画面上端から `expo_call_screening_overlay_top_offset`（既定 280dp）の位置に、左右へ `expo_call_screening_overlay_side_margin`（既定 12dp）の余白を空けて表示されます。Pixel 7 では着信のヘッドアップ通知が上端から約 185dp を占め、かつ通知はバンドより上に描画されるため、既定値はその下に収まるように決めてあります。ダイアラーによって通知の高さは異なるので、自分の環境で通知と重なる場合は `android/app/src/main/res/values/dimens.xml` に同名の dimen を宣言して上書きしてください。
+
+```xml
+<resources>
+  <dimen name="expo_call_screening_overlay_top_offset">260dp</dimen>
+  <dimen name="expo_call_screening_overlay_side_margin">16dp</dimen>
+</resources>
+```
+
+バンドは上下ドラッグで移動でき、移動先は次の着信以降も記憶されます（`expo_call_screening_overlay_top_offset` より優先されます）。一度ドラッグすると dimen を変えても効かなくなるので、既定位置に戻すにはドラッグし直すか `expo_call_screening_overlay` の SharedPreferences を消してください。バンドを消すのは閉じるボタン・通話終了・タイムアウトの 3 通りで、差し替えレイアウトでは `expo_call_screening_close` は任意です（省略した場合は後ろの 2 つだけになります）。読み上げ用のラベルは `expo_call_screening_close_description` 文字列なので、ローカライズする場合は同名で宣言してください。
+
 ## 使い方
 
 ```ts
@@ -127,7 +155,15 @@ useEffect(() => {
 
 `useEffect` は `react`、`AppState` は `react-native` から import してください。エラー表示はアプリに合わせて実装します。リストが未保存または空の場合、番号は登録されません。
 
-電話番号は E.164 形式（`+819012345678`）で登録してください。照合時は数字以外を除去し、iOS は国番号を含む完全な番号で比較するため、`090-1234-5678` のような国内形式は一致しません。
+## 電話番号の形式
+
+登録する番号は **E.164 形式**にしてください。`+`、国番号、国内番号を続けたものです（`+819012345678`）。スペース・ハイフン・ドット・括弧は両プラットフォームとも無視するため入っていて構いませんが、`+` と国番号は省略できません。それ以外の形式を渡すと `setCallerIdentities` が該当する index を挙げて throw し、**何も保存しません**。
+
+この厳格さは好みではなく iOS の制約です。Call Directory Extension は CallKit に `Int64` を渡すため、国内形式の `09012345678` は `9012345678` という別の番号として登録されます。エラーは出ず、ただ永久に一致しません。
+
+一方で着信番号の形式は誰にも制御できません。キャリアは `09012345678` と `+819012345678` のどちらの形式で渡してくるか分かりません。Android 側はこれを吸収しており、Android 12（API 31）以降は SIM の国を使う `PhoneNumberUtils.areSamePhoneNumber`、それ未満では末尾一致の `compare` を使います（後者は内線番号のような短い番号で誤一致が起こり得ます）。iOS では同じ役割を CallKit が担います。したがって **E.164 で 1 件登録しておけば、どちらの形式で着信しても一致します**。
+
+自由入力を E.164 に変換するのはアプリ側の責務です。ユーザーがどの地域の番号を入力するかを知っているのはアプリであって、このモジュールではありません。入力フォームの時点で変換すれば、着信時ではなくその場で誤りを返せます。
 
 ## API
 
@@ -146,7 +182,7 @@ useEffect(() => {
 
 `iOS` `Android`
 
-保存済みリストを置き換えます。`CallerIdentity` は `{ phoneNumber: string; label: string }` です。
+保存済みリストを置き換えます。`CallerIdentity` は `{ phoneNumber: string; label: string }` です。`phoneNumber` が [E.164 形式](#電話番号の形式)でない場合は throw し、保存済みリストはそのまま残ります。
 
 ### `reload(): Promise<void>`
 
@@ -208,7 +244,6 @@ Android:
 - [ ] OEM 製ダイアラーを問わずロック画面でもオーバーレイを確実に表示する
 - [ ] 発信時の Caller ID
 - [ ] iOS の Live Caller ID Lookup（サーバー照合方式、iOS 18 以上）
-- [ ] 数字除去以外の電話番号正規化（libphonenumber など）
 - [ ] 対応表のバックグラウンド同期
 
 ## ライセンス
