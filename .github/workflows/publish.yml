@@ -71,7 +71,9 @@ jobs:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
           shopt -s nullglob
-          tarballs=(dist/*.tgz)
+          # The `./` is load-bearing: npm reads a bare `dist/x.tgz` as a git shorthand
+          # (`owner/repo`) and tries to clone it, rather than as a local tarball.
+          tarballs=(./dist/*.tgz)
           if [ ${#tarballs[@]} -ne 1 ]; then
             echo "Expected exactly one tarball in dist/, found ${#tarballs[@]}: ${tarballs[*]}" >&2
             exit 1
